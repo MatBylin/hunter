@@ -1,8 +1,8 @@
-name: Run Selenium Tests
+name: Hunt
 
 on:
   schedule:
-    - cron: '*/2 * * * *'  # Every 2 minutes
+    - cron: '0 15 * * *' # Every 10 minutes
   workflow_dispatch:
 
 jobs:
@@ -17,21 +17,14 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'  # Change this to your actual Java version
+          java-version: '17'  # Adjust based on your actual Java version
 
-      - name: Set up Maven
-        uses: s4u/setup-maven-action@v1  # Optional: can also rely on runner’s pre-installed Maven
-        with:
-          maven-version: '3.8.8'
-
-      - name: Set up virtual display (for headless browser)
+      - name: Set up virtual display
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
-          export DISPLAY=:99
           Xvfb :99 -screen 0 1920x1080x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      - name: Run Maven Selenium tests
-        run: |
-          export DISPLAY=:99
-          mvn clean test
+      - name: Run Selenium tests with Maven
+        run: mvn clean test
