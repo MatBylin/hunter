@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.List;
 
 @Slf4j
-public class Hunter {
+public class HunterTest {
     private WebDriver driver;
 
     @BeforeMethod
