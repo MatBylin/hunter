@@ -1,0 +1,37 @@
+name: Run Selenium Tests
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'  # Every 2 minutes
+  workflow_dispatch:
+
+jobs:
+  run-selenium:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'  # Change this to your actual Java version
+
+      - name: Set up Maven
+        uses: s4u/setup-maven-action@v1  # Optional: can also rely on runner’s pre-installed Maven
+        with:
+          maven-version: '3.8.8'
+
+      - name: Set up virtual display (for headless browser)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 &
+
+      - name: Run Maven Selenium tests
+        run: |
+          export DISPLAY=:99
+          mvn clean test
