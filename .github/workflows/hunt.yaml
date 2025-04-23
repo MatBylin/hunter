@@ -2,7 +2,7 @@ name: Hunt
 
 on:
   schedule:
-    - cron: '0 15 * * *' # Every 10 minutes
+    - cron: '0 15 * * *' # run at 3pm
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'  # Adjust based on your actual Java version
 
-      - name: Set up virtual display
+      - name: Set up env
         run: |
           sudo apt-get update
 #          sudo apt-get install -y xvfb
