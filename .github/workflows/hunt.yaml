@@ -28,8 +28,10 @@ jobs:
 
       - name: Commit and push data
         run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
           git add data/data.csv
           git commit -m "Update watch prices - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
           git push origin master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
