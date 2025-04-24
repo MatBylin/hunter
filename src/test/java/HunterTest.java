@@ -57,7 +57,7 @@ public class HunterTest {
     }
 
     private void logPrice(String timestamp, String name, String price) {
-        try (FileWriter writer = new FileWriter("data/data.csv", true)) {
+        try (FileWriter writer = new FileWriter("data.csv", true)) {
             writer.append(String.join(",", timestamp, name, parsePrice(price)));
             writer.append("\n");
 
