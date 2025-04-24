@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Watch Prices Over Time</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+</head>
+<body>
+<h2>Watch Price Trend</h2>
+<canvas id="priceChart" width="1000" height="800"></canvas>
+<script>
+    fetch('data.csv')
+      .then(response => response.text())
+      .then(csv => {
+        const results = Papa.parse(csv, { header: true });
+        const labels = results.data.map(row => row.timestamp);
+        const data = results.data.map(row => parseFloat(row.price));
+
+        new Chart(document.getElementById('priceChart'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Watch Price',
+              data,
+              borderColor: 'blue',
+              fill: false
+            }]
+          },
+          options: {
+            scales: {
+              x: { title: { display: true, text: 'Time' }},
+              y: { title: { display: true, text: 'Price ($)' }}
+            }
+          }
+        });
+      });
+</script>
+</body>
+</html>
