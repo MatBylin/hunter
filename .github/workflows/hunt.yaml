@@ -34,4 +34,4 @@ jobs:
           git commit -m "Update watch prices - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
           git push origin master
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN1 }}
