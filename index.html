@@ -1,36 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Watch Prices Over Time</title>
+    <title>Watch Price Trends</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
 </head>
 <body>
-<h2>Watch Price Trend</h2>
-<canvas id="priceChart" width="1000" height="800"></canvas>
+<h2>Watch Prices</h2>
+<canvas id="priceChart" width="1200" height="700"></canvas>
+
 <script>
+    const ctx = document.getElementById('priceChart').getContext('2d');
+
     fetch('data.csv')
       .then(response => response.text())
       .then(csv => {
-        const results = Papa.parse(csv, { header: true });
-        const labels = results.data.map(row => row.timestamp);
-        const data = results.data.map(row => parseFloat(row.price));
+        const parsed = Papa.parse(csv, { header: true });
+        const rows = parsed.data.filter(row => row.timestamp && row.name && row.price);
 
-        new Chart(document.getElementById('priceChart'), {
+        // Unique sorted timestamps
+        const timestamps = [...new Set(rows.map(r => r.timestamp))].sort();
+
+        // Unique watch names
+        const names = [...new Set(rows.map(r => r.name))];
+
+        // Create datasets: one per watch
+        const datasets = names.map(name => {
+          const data = timestamps.map(ts => {
+            const entry = rows.find(r => r.timestamp === ts && r.name === name);
+            return entry ? parseFloat(entry.price) : null;
+          });
+
+          const color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+
+          return {
+            label: name,
+            data,
+            borderColor: color,
+            backgroundColor: color + "55",
+            spanGaps: true,
+            tension: 0.3,
+            fill: false
+          };
+        });
+
+        // Render chart
+        new Chart(ctx, {
           type: 'line',
           data: {
-            labels,
-            datasets: [{
-              label: 'Watch Price',
-              data,
-              borderColor: 'blue',
-              fill: false
-            }]
+            labels: timestamps,
+            datasets
           },
           options: {
+            responsive: true,
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            },
+            plugins: {
+              legend: { display: true, position: 'top' },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: ${ctx.formattedValue} zł`
+                }
+              }
+            },
             scales: {
-              x: { title: { display: true, text: 'Time' }},
-              y: { title: { display: true, text: 'Price ($)' }}
+              x: {
+                title: { display: true, text: 'Timestamp' }
+              },
+              y: {
+                title: { display: true, text: 'Price (zł)' },
+                beginAtZero: false
+              }
             }
           }
         });
