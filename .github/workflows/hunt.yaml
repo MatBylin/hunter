@@ -2,7 +2,7 @@ name: Hunt
 
 on:
   schedule:
-    - cron: '0 */1 * * *' # run every hour
+    - cron: '0 */1 * * *'
   workflow_dispatch:
 
 jobs:
