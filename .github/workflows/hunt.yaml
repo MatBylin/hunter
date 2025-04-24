@@ -25,3 +25,11 @@ jobs:
 
       - name: Run Selenium tests with Maven
         run: mvn clean test
+
+      - name: Commit and push data
+        run: |
+          git add data/data.csv
+          git commit -m "Update watch prices - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
+          git push origin master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
