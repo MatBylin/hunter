@@ -13,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -44,7 +45,8 @@ public class HunterTest {
 
         List<WebElement> elements = driver.findElements(By.cssSelector(".w-pb-list__item"));
         System.out.printf("Found %s items!%n", elements.size());
-        String timestamp = LocalDateTime.now().toString();
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
         for (var element : elements) {
             List<WebElement> title = element.findElements(By.xpath(".//h3/a"));
             List<WebElement> price = element.findElements(By.xpath(".//p/span"));
