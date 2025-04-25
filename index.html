@@ -4,13 +4,28 @@
     <title>Watch Price Trends</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+    <style>
+        body {
+          background-color: #121212;
+          color: #f0f0f0;
+          font-family: Arial, sans-serif;
+          text-align: center;
+        }
+        h2 {
+          color: #ffffff;
+        }
+        canvas {
+          background-color: #1e1e1e;
+          border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
 <h2>Watch Prices</h2>
-<canvas id="priceChart" width="1200" height="700"></canvas>
+<canvas id="priceChart1" width="1200" height="550"></canvas>
 
 <script>
-    const ctx = document.getElementById('priceChart').getContext('2d');
+    const ctx = document.getElementById('priceChart1').getContext('2d');
 
     fetch('data.csv')
       .then(response => response.text())
@@ -18,20 +33,16 @@
         const parsed = Papa.parse(csv, { header: true });
         const rows = parsed.data.filter(row => row.timestamp && row.name && row.price);
 
-        // Unique sorted timestamps
         const timestamps = [...new Set(rows.map(r => r.timestamp))].sort();
-
-        // Unique watch names
         const names = [...new Set(rows.map(r => r.name))];
 
-        // Create datasets: one per watch
         const datasets = names.map(name => {
           const data = timestamps.map(ts => {
             const entry = rows.find(r => r.timestamp === ts && r.name === name);
             return entry ? parseFloat(entry.price) : null;
           });
 
-          const color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+          const color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 
           return {
             label: name,
@@ -40,11 +51,11 @@
             backgroundColor: color + "55",
             spanGaps: true,
             tension: 0.3,
-            fill: false
+            fill: false,
+            borderWidth: 1
           };
         });
 
-        // Render chart
         new Chart(ctx, {
           type: 'line',
           data: {
@@ -59,8 +70,37 @@
               intersect: false
             },
             plugins: {
-              legend: { display: true, position: 'top' },
+              legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    color: '#f0f0f0'
+                  },
+                  onClick: (e, legendItem, legend) => {
+                    const chart = legend.chart;
+                    const index = legendItem.datasetIndex;
+                    const ci = chart;
+                    const clickedMeta = ci.getDatasetMeta(index);
+
+                    const allHidden = ci.data.datasets.every((ds, i) => ci.getDatasetMeta(i).hidden || i === index);
+                    const alreadyOnlyVisible = !clickedMeta.hidden && allHidden;
+
+                    ci.data.datasets.forEach((dataset, i) => {
+                      const meta = ci.getDatasetMeta(i);
+                      if (i === index) {
+                        meta.hidden = alreadyOnlyVisible ? false : false;
+                      } else {
+                        meta.hidden = alreadyOnlyVisible ? false : true;
+                      }
+                    });
+
+                    ci.update();
+                  }
+                },
               tooltip: {
+                backgroundColor: '#333',
+                titleColor: '#fff',
+                bodyColor: '#ddd',
                 mode: 'index',
                 intersect: false,
                 callbacks: {
@@ -70,10 +110,26 @@
             },
             scales: {
               x: {
-                title: { display: true, text: 'Timestamp' }
+                ticks: { color: '#a3a3a3' },
+                title: {
+                  display: true,
+                  text: 'Timestamp',
+                  color: '#a3a3a3'
+                },
+                grid: {
+                  color: '#2a2a2a'
+                }
               },
               y: {
-                title: { display: true, text: 'Price (zł)' },
+                ticks: { color: '#ccc' },
+                title: {
+                  display: true,
+                  text: 'Price (zł)',
+                  color: '#ccc'
+                },
+                grid: {
+                  color: '#2a2a2a'
+                },
                 beginAtZero: false
               }
             }
