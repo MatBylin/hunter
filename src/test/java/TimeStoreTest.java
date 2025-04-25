@@ -17,7 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
-public class HunterTest {
+public class TimeStoreTest {
     private WebDriver driver;
 
     @BeforeMethod
@@ -38,14 +38,27 @@ public class HunterTest {
 
     @Test
     public void hunt() {
-        driver.get("https://www.timestore.pl/wyszukiwanie?q=SRPD");
+        List<String> urls = List.of(
+                "https://www.timestore.pl/wyszukiwanie?q=SRPD",
+                "https://www.timestore.pl/zegarki-meskie-orient?sort=cheapest",
+                "https://www.timestore.pl/seiko-prospex?sort=cheapest",
+                "https://www.timestore.pl/citizen-promaster?sort=cheapest"
+        );
 
+        scrapeDataFromUrls(getExecutionTimeStamp(), urls);
+    }
+
+    private void scrapeDataFromUrls(String timestamp, List<String> urls) {
+        for (var url : urls) {
+            scrapeDataFromUrl(timestamp, url);
+        }
+    }
+
+    private void scrapeDataFromUrl(String timestamp, String url) {
+        driver.get(url);
         WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        webDriverWait.until(d -> driver.findElements(By.cssSelector(".w-pb-list__item")).size() > 3);
-
+        webDriverWait.until(d -> driver.findElements(By.cssSelector(".w-pb-list__item")).size() > 1);
         List<WebElement> elements = driver.findElements(By.cssSelector(".w-pb-list__item"));
-        System.out.printf("Found %s items!%n", elements.size());
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         for (var element : elements) {
             List<WebElement> title = element.findElements(By.xpath(".//h3/a"));
@@ -56,6 +69,10 @@ public class HunterTest {
                 logPrice(timestamp, title.get(0).getText(), price.get(0).getText());
             }
         }
+    }
+
+    private String getExecutionTimeStamp() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     private void logPrice(String timestamp, String name, String price) {
@@ -70,11 +87,11 @@ public class HunterTest {
 
     private String parsePrice(String price) {
         return price
-                .replace("zł", "")      // remove currency
-                .replace("\u00A0", "")  // remove non-breaking space (used in some price strings)
-                .replace(" ", "")       // remove regular spaces (thousands separator)
-                .replace(",", ".")      // replace comma with dot
-                .trim();                // remove any extra whitespace
+                .replace("zł", "")
+                .replace("\u00A0", "")
+                .replace(" ", "")
+                .replace(",", ".")
+                .trim();
     }
 
     @AfterMethod
