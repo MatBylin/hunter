@@ -6,161 +6,186 @@
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
     <style>
         body {
-          background-color: #121212;
-          color: #f0f0f0;
-          font-family: Arial, sans-serif;
-          text-align: center;
+            background-color: #121212;
+            color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            text-align: center;
         }
         h2 {
-          color: #ffffff;
+            color: #ffffff;
         }
         canvas {
-          background-color: #1e1e1e;
-          border-radius: 8px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+        }
+        select {
+            margin: 10px;
+            padding: 5px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
+
 <label for="brandSelect">Select Watch Brand:</label>
-<select id="brandSelect" style="margin-bottom: 20px;">
+<select id="brandSelect">
     <option value="Seiko 5">Seiko 5</option>
     <option value="Seiko Prospex">Seiko Prospex</option>
     <option value="Orient">Orient</option>
     <option value="Citizen">Citizen</option>
     <option value="all">All Brands</option>
 </select>
+
+<label for="weekSelect">Show data from last:</label>
+<select id="weekSelect">
+    <option value="1" selected>1 week</option>
+    <option value="2">2 weeks</option>
+    <option value="3">3 weeks</option>
+    <option value="4">4 weeks</option>
+    <option value="all">All time</option>
+</select>
+
 <canvas id="priceChart" width="1200" height="550"></canvas>
 
 <script>
     const ctx = document.getElementById('priceChart').getContext('2d');
-   let chartInstance;
-   let allRows = [];
+    let chartInstance;
+    let allRows = [];
 
-   fetch('data.csv')
-     .then(response => response.text())
-     .then(csv => {
-       const parsed = Papa.parse(csv, { header: true });
-       allRows = parsed.data.filter(row => row.timestamp && row.name && row.price);
+    fetch('data.csv')
+        .then(response => response.text())
+        .then(csv => {
+            const parsed = Papa.parse(csv, { header: true });
+            allRows = parsed.data.filter(row => row.timestamp && row.name && row.price);
+            initializeBrandSelector();
+            const brandSelect = document.getElementById('brandSelect');
+            const weekSelect = document.getElementById('weekSelect');
+            updateChart(brandSelect.value, weekSelect.value);
+        });
 
-       initializeBrandSelector();
-       updateChart('Seiko 5');
-     });
+    function initializeBrandSelector() {
+        const brandSelect = document.getElementById('brandSelect');
+        const weekSelect = document.getElementById('weekSelect');
 
-   function initializeBrandSelector() {
-     const brandSelect = document.getElementById('brandSelect');
-<!--     const brands = [...new Set(allRows.map(r => r.name.split(' ')[0]))]; // assume brand is first word in name-->
-<!--     brands.sort();-->
-<!--     brands.forEach(brand => {-->
-<!--       const option = document.createElement('option');-->
-<!--       option.value = brand;-->
-<!--       option.textContent = brand;-->
-<!--       brandSelect.appendChild(option);-->
-<!--     });-->
+        brandSelect.addEventListener('change', () => {
+            updateChart(brandSelect.value, weekSelect.value);
+        });
 
-     brandSelect.addEventListener('change', (e) => {
-       updateChart(e.target.value);
-     });
-   }
+        weekSelect.addEventListener('change', () => {
+            updateChart(brandSelect.value, weekSelect.value);
+        });
+    }
 
-   function updateChart(selectedBrand) {
-     const filteredRows = selectedBrand === 'all'
-       ? allRows
-       : allRows.filter(r => r.name.startsWith(selectedBrand));
+    function updateChart(selectedBrand, selectedWeeks = '1') {
+        let filteredRows = selectedBrand === 'all'
+            ? allRows
+            : allRows.filter(r => r.name.startsWith(selectedBrand));
 
-     const timestamps = [...new Set(filteredRows.map(r => r.timestamp))].sort();
-     const names = [...new Set(filteredRows.map(r => r.name))];
+        if (selectedWeeks !== 'all') {
+            const now = new Date();
+            const pastDate = new Date(now);
+            pastDate.setDate(now.getDate() - (parseInt(selectedWeeks) * 7));
 
-     const datasets = names.map(name => {
-       const data = timestamps.map(ts => {
-         const entry = filteredRows.find(r => r.timestamp === ts && r.name === name);
-         return entry ? parseFloat(entry.price) : null;
-       });
+            filteredRows = filteredRows.filter(r => {
+                const date = new Date(r.timestamp);
+                return date >= pastDate;
+            });
+        }
 
-       const color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        const timestamps = [...new Set(filteredRows.map(r => r.timestamp))].sort();
+        const names = [...new Set(filteredRows.map(r => r.name))];
 
-       return {
-         label: name,
-         data,
-         borderColor: color,
-         backgroundColor: color + "55",
-         spanGaps: true,
-         tension: 0.3,
-         fill: false,
-         borderWidth: 1
-       };
-     });
+        const datasets = names.map(name => {
+            const data = timestamps.map(ts => {
+                const entry = filteredRows.find(r => r.timestamp === ts && r.name === name);
+                return entry ? parseFloat(entry.price) : null;
+            });
 
-     if (chartInstance) {
-       chartInstance.destroy();
-     }
+            const color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 
-     chartInstance = new Chart(ctx, {
-       type: 'line',
-       data: {
-         labels: timestamps,
-         datasets
-       },
-       options: {
-         responsive: true,
-         interaction: {
-           mode: 'nearest',
-           axis: 'x',
-           intersect: false
-         },
-         plugins: {
-           legend: {
-             display: true,
-             position: 'top',
-             labels: { color: '#f0f0f0' },
-             onClick: (e, legendItem, legend) => {
-               const chart = legend.chart;
-               const index = legendItem.datasetIndex;
-               const ci = chart;
-               const clickedMeta = ci.getDatasetMeta(index);
-               const allHidden = ci.data.datasets.every((ds, i) => ci.getDatasetMeta(i).hidden || i === index);
-               const alreadyOnlyVisible = !clickedMeta.hidden && allHidden;
-               ci.data.datasets.forEach((dataset, i) => {
-                 const meta = ci.getDatasetMeta(i);
-                 meta.hidden = i === index ? false : !alreadyOnlyVisible;
-               });
-               ci.update();
-             }
-           },
-           tooltip: {
-             backgroundColor: '#333',
-             titleColor: '#fff',
-             bodyColor: '#ddd',
-             mode: 'index',
-             intersect: false,
-             callbacks: {
-               label: ctx => `${ctx.dataset.label}: ${ctx.formattedValue} zł`
-             }
-           }
-         },
-         scales: {
-           x: {
-             ticks: { color: '#a3a3a3' },
-             title: {
-               display: true,
-               text: 'Timestamp',
-               color: '#a3a3a3'
-             },
-             grid: { color: '#2a2a2a' }
-           },
-           y: {
-             ticks: { color: '#ccc' },
-             title: {
-               display: true,
-               text: 'Price (zł)',
-               color: '#ccc'
-             },
-             grid: { color: '#2a2a2a' },
-             beginAtZero: false
-           }
-         }
-       }
-     });
-   }
+            return {
+                label: name,
+                data,
+                borderColor: color,
+                backgroundColor: color + "55",
+                spanGaps: true,
+                tension: 0.3,
+                fill: false,
+                borderWidth: 1
+            };
+        });
+
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { color: '#f0f0f0' },
+                        onClick: (e, legendItem, legend) => {
+                            const chart = legend.chart;
+                            const index = legendItem.datasetIndex;
+                            const ci = chart;
+                            const clickedMeta = ci.getDatasetMeta(index);
+                            const allHidden = ci.data.datasets.every((ds, i) => ci.getDatasetMeta(i).hidden || i === index);
+                            const alreadyOnlyVisible = !clickedMeta.hidden && allHidden;
+                            ci.data.datasets.forEach((dataset, i) => {
+                                const meta = ci.getDatasetMeta(i);
+                                meta.hidden = i === index ? false : !alreadyOnlyVisible;
+                            });
+                            ci.update();
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#333',
+                        titleColor: '#fff',
+                        bodyColor: '#ddd',
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.formattedValue} zł`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#a3a3a3' },
+                        title: {
+                            display: true,
+                            text: 'Timestamp',
+                            color: '#a3a3a3'
+                        },
+                        grid: { color: '#2a2a2a' }
+                    },
+                    y: {
+                        ticks: { color: '#ccc' },
+                        title: {
+                            display: true,
+                            text: 'Price (zł)',
+                            color: '#ccc'
+                        },
+                        grid: { color: '#2a2a2a' },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
 </script>
 </body>
 </html>
