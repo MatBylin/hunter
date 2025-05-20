@@ -36,12 +36,13 @@
     <option value="all">All Brands</option>
 </select>
 
-<label for="weekSelect">Show data from last:</label>
-<select id="weekSelect">
-    <option value="1" selected>1 week</option>
-    <option value="2">2 weeks</option>
-    <option value="3">3 weeks</option>
-    <option value="4">4 weeks</option>
+<label for="daySelect">Show data from last:</label>
+<select id="daySelect">
+    <option value="1" selected>1 day</option>
+    <option value="2">2 days</option>
+    <option value="5">5 days</option>
+    <option value="7">7 days</option>
+    <option value="14">14 days</option>
     <option value="all">All time</option>
 </select>
 
@@ -57,34 +58,34 @@
         .then(csv => {
             const parsed = Papa.parse(csv, { header: true });
             allRows = parsed.data.filter(row => row.timestamp && row.name && row.price);
-            initializeBrandSelector();
+            initializeSelectors();
             const brandSelect = document.getElementById('brandSelect');
-            const weekSelect = document.getElementById('weekSelect');
-            updateChart(brandSelect.value, weekSelect.value);
+            const daySelect = document.getElementById('daySelect');
+            updateChart(brandSelect.value, daySelect.value);
         });
 
-    function initializeBrandSelector() {
+    function initializeSelectors() {
         const brandSelect = document.getElementById('brandSelect');
-        const weekSelect = document.getElementById('weekSelect');
+        const daySelect = document.getElementById('daySelect');
 
         brandSelect.addEventListener('change', () => {
-            updateChart(brandSelect.value, weekSelect.value);
+            updateChart(brandSelect.value, daySelect.value);
         });
 
-        weekSelect.addEventListener('change', () => {
-            updateChart(brandSelect.value, weekSelect.value);
+        daySelect.addEventListener('change', () => {
+            updateChart(brandSelect.value, daySelect.value);
         });
     }
 
-    function updateChart(selectedBrand, selectedWeeks = '1') {
+    function updateChart(selectedBrand, selectedDays = '1') {
         let filteredRows = selectedBrand === 'all'
             ? allRows
             : allRows.filter(r => r.name.startsWith(selectedBrand));
 
-        if (selectedWeeks !== 'all') {
+        if (selectedDays !== 'all') {
             const now = new Date();
             const pastDate = new Date(now);
-            pastDate.setDate(now.getDate() - (parseInt(selectedWeeks) * 7));
+            pastDate.setDate(now.getDate() - parseInt(selectedDays));
 
             filteredRows = filteredRows.filter(r => {
                 const date = new Date(r.timestamp);
